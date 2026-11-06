@@ -4,7 +4,13 @@ TypeScript/JavaScript client for chatting with an **existing** Managed Agents te
 
 Requires Node.js 22+. Create an API key on the platform's **API Keys** page and keep it on the server. Never embed it in a browser bundle. The default client uses the currently deployed session API.
 
-This MIT-licensed package has no remote or registry release yet. To try it in another Node.js project, build a local tarball:
+This MIT-licensed package has a [public source repository](https://github.com/Duke-ECE/managed-agents-sdk), but no npm registry release yet. For an independent Node.js project, install a pinned source commit (npm runs `prepare` to build it):
+
+```sh
+npm install 'git+https://github.com/Duke-ECE/managed-agents-sdk.git#<commit-sha>'
+```
+
+For local-only testing, build a tarball:
 
 ```sh
 npm ci --ignore-scripts
