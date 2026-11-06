@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { ManagedAgentsClient, ApiError, StreamError } from '../dist/index.js'
 
-test('creates a session for an existing agent and streams split SSE frames', async () => {
+test('durable mode preserves the accepted request identity across split SSE frames', async () => {
   const calls = []
   const encoder = new TextEncoder()
   const chunks = [
@@ -13,6 +13,7 @@ test('creates a session for an existing agent and streams split SSE frames', asy
   const client = new ManagedAgentsClient({
     baseUrl: 'https://example.test/',
     apiKey: async () => 'ma_sk_test',
+    durable: true,
     fetch: async (url, init) => {
       calls.push({ url, init })
       if (url.endsWith('/api/sessions')) return Response.json({ session_id: 's-1' })
@@ -61,7 +62,41 @@ test('preserves HTTP status and SSE failures separately', async () => {
   })
   await assert.rejects(async () => {
     for await (const _ of truncatedClient.chat('s-1', 'Hello')) { /* Consume the stream. */ }
-  }, error => error instanceof StreamError && error.message === 'Chat stream ended before done' && error.clientRequestId === 'req-accepted')
+  }, error => error instanceof StreamError && error.message === 'Chat stream ended before done' && error.clientRequestId === undefined)
+})
+
+test('current API mode does not promise deduplication or cancellation', async () => {
+  const calls = []
+  const client = new ManagedAgentsClient({
+    baseUrl: 'https://example.test',
+    apiKey: 'ma_sk_test',
+    fetch: async (url, init) => {
+      calls.push({ url, init })
+      return new Response('event: done\ndata: {"status":"completed"}\n\n')
+    },
+  })
+  const events = []
+  for await (const event of client.chat('s-1', 'Hello')) events.push(event)
+  assert.equal(events[0].clientRequestId, undefined)
+  assert.equal(calls[0].init.headers.has('X-Client-Request-Id'), false)
+  await assert.rejects(async () => {
+    for await (const _ of client.chat('s-1', 'Hello', { clientRequestId: 'req-1' })) { /* Consume the stream. */ }
+  }, /requires the durable session API/)
+  await assert.rejects(client.cancel('s-1'), /requires the durable session API/)
+  assert.equal(calls.length, 1)
+})
+
+test('durable mode sends cancellation to the durable endpoint', async () => {
+  const calls = []
+  const client = new ManagedAgentsClient({
+    baseUrl: 'https://example.test',
+    apiKey: 'ma_sk_test',
+    durable: true,
+    fetch: async (url, init) => { calls.push({ url, init }); return new Response(null, { status: 204 }) },
+  })
+  await client.cancel('session/1', 'message-1')
+  assert.equal(calls[0].url, 'https://example.test/api/sessions/session%2F1/cancel')
+  assert.deepEqual(JSON.parse(calls[0].init.body), { request_message_id: 'message-1' })
 })
 
 test('renames and ends a session with the platform key', async () => {

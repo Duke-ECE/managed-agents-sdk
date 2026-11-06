@@ -3,6 +3,8 @@ export interface ClientOptions {
   /** A server-side platform key created by the user in Managed Agents. */
   apiKey: string | (() => string | Promise<string>);
   fetch?: typeof fetch;
+  /** Enable the unpublished request-identity and cancellation contract after its rollout. */
+  durable?: boolean;
 }
 
 export interface Session {
@@ -30,13 +32,13 @@ export interface TranscriptPage {
 export interface ChatEvent {
   event: string;
   data: unknown;
-  /** The durable request identity for reconnecting after a dropped stream. */
-  clientRequestId: string;
+  /** Present only when the durable contract is enabled. */
+  clientRequestId?: string;
 }
 
 export interface ChatOptions {
   signal?: AbortSignal;
-  /** Reuse this identity when reconnecting the same submitted turn. */
+  /** Durable contract only: reuse this identity when reconnecting the same turn. */
   clientRequestId?: string;
 }
 
@@ -168,23 +170,27 @@ export class ManagedAgentsClient {
   }
 
   async cancel(sessionId: string, requestMessageId?: string): Promise<void> {
+    if (!this.options.durable) throw new Error("Cancellation requires the durable session API");
     await this.request(`/api/sessions/${encodeURIComponent(sessionId)}/cancel`, {
       method: "POST", body: JSON.stringify({ request_message_id: requestMessageId ?? "" }),
     });
   }
 
-  /** Stream one turn. If the connection drops, reuse clientRequestId for the same turn. */
+  /** Stream one turn. On the current API, inspect history before retrying a dropped stream. */
   async *chat(sessionId: string, content: string, options: ChatOptions = {}): AsyncGenerator<ChatEvent> {
     if (!content) throw new Error("content is required");
-    const requestId = options.clientRequestId ?? `req-${crypto.randomUUID()}`;
+    if (!this.options.durable && options.clientRequestId !== undefined) {
+      throw new Error("clientRequestId requires the durable session API");
+    }
+    const requestId = this.options.durable ? options.clientRequestId ?? `req-${crypto.randomUUID()}` : undefined;
     const response = await this.request(`/api/sessions/${encodeURIComponent(sessionId)}/messages`, {
       method: "POST",
-      headers: { "X-Client-Request-Id": requestId },
+      headers: requestId ? { "X-Client-Request-Id": requestId } : undefined,
       body: JSON.stringify({ content }),
       signal: options.signal,
     });
     if (!response.body) throw new Error("Chat response has no body stream");
-    const acceptedId = response.headers.get("X-Client-Request-Id") || requestId;
+    const acceptedId = requestId ? response.headers.get("X-Client-Request-Id") || requestId : undefined;
     let completed = false;
     for await (const frame of frames(response.body)) {
       if (frame.event === "error") throw new StreamError(frame.data, acceptedId);
