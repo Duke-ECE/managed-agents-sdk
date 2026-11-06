@@ -4,6 +4,18 @@ TypeScript/JavaScript client for chatting with an **existing** Managed Agents te
 
 Requires Node.js 22+. Create an API key on the platform's **API Keys** page and keep it on the server. Never embed it in a browser bundle. The default client uses the currently deployed session API.
 
+This package has no remote or registry release yet. To try it in another Node.js project, build a local tarball:
+
+```sh
+npm ci --ignore-scripts
+npm run build
+npm pack
+# In the consuming project:
+npm install /absolute/path/to/managed-agents-sdk/duke-ece-managed-agents-sdk-0.1.0.tgz
+```
+
+Use an agent ID from your account (available through `GET /api/agents` with your Supabase login token). The built-in Default assistant ID is `a0000000-0000-0000-0000-000000000001`, but it requires platform LLM access. An API key cannot list agents.
+
 ```ts
 import { ManagedAgentsClient } from '@duke-ece/managed-agents-sdk'
 
@@ -25,7 +37,7 @@ const history = await client.getTranscript(sessionId)
 
 The client also provides `listSessions`, `renameSession`, `endSession`, and `getTranscript`. Name a session after its first completed turn, since the runtime may generate a title for that first turn. `chat` yields named SSE events (`text_delta`, `tool_call`, `tool_result`, `done`) with parsed JSON data. HTTP failures throw `ApiError` with a status; an SSE `error` frame or a stream that ends before `done` throws `StreamError`. The deployed API does **not** deduplicate chat submissions. If a connection drops before `done`, read the transcript before deciding whether to send another message; resending may create a second turn.
 
-For a runnable local example, build the package and use an existing agent ID:
+For a runnable local example, use an existing agent ID:
 
 ```sh
 npm ci --ignore-scripts
