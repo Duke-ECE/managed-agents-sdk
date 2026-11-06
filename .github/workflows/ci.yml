@@ -1,0 +1,18 @@
+name: SDK CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          registry-url: https://registry.npmjs.org/
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npm pack --dry-run --registry=https://registry.npmjs.org/

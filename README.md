@@ -4,7 +4,7 @@ TypeScript/JavaScript client for chatting with an **existing** Managed Agents te
 
 Requires Node.js 22+. Create an API key on the platform's **API Keys** page and keep it on the server. Never embed it in a browser bundle. The default client uses the currently deployed session API.
 
-This package has no remote or registry release yet. To try it in another Node.js project, build a local tarball:
+This MIT-licensed package has no remote or registry release yet. To try it in another Node.js project, build a local tarball:
 
 ```sh
 npm ci --ignore-scripts
@@ -13,6 +13,8 @@ npm pack
 # In the consuming project:
 npm install /absolute/path/to/managed-agents-sdk/duke-ece-managed-agents-sdk-0.1.0.tgz
 ```
+
+After the public release, install it with `npm install @duke-ece/managed-agents-sdk`.
 
 Use an agent ID from your account (available through `GET /api/agents` with your Supabase login token). The built-in Default assistant ID is `a0000000-0000-0000-0000-000000000001`, but it requires platform LLM access. An API key cannot list agents.
 
