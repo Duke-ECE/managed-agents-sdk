@@ -1,6 +1,6 @@
 export interface ClientOptions {
   baseUrl: string;
-  /** A server-side platform key created by the user in Managed Agents. */
+  /** A server-side platform key created by the user in PolyAgent. */
   apiKey: string | (() => string | Promise<string>);
   fetch?: typeof fetch;
   /** Enable the unpublished request-identity and cancellation contract after its rollout. */

@@ -1,6 +1,6 @@
-# Managed Agents chat SDK (draft)
+# PolyAgent chat SDK (draft)
 
-TypeScript/JavaScript client for chatting with an **existing** Managed Agents template. It does not create agents or manage sandboxes. The package is still a local draft; the current API-key backend is deployed, but an owner-authenticated end-to-end check and the durable session contract remain outstanding.
+TypeScript/JavaScript client for chatting with an **existing** PolyAgent template. It does not create agents or manage sandboxes. The package is still a local draft; the current API-key backend is deployed, but an owner-authenticated end-to-end check and the durable session contract remain outstanding.
 
 Requires Node.js 22+. Create an API key on the platform's **API Keys** page and keep it on the server. Never embed it in a browser bundle. The default client uses the currently deployed session API.
 

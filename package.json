@@ -2,7 +2,7 @@
   "name": "@duke-ece/managed-agents-sdk",
   "version": "0.1.0",
   "type": "module",
-  "description": "TypeScript client for chatting with existing Managed Agents templates",
+  "description": "TypeScript client for chatting with existing PolyAgent templates",
   "license": "MIT",
   "engines": { "node": ">=22" },
   "publishConfig": {
